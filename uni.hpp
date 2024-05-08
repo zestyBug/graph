@@ -132,6 +132,9 @@ public:
     static void create(Array::entity l, Array::entity t) {
         map.emplace(l,t);
     }
+    static void create(const Lession& l, const Professor& t) {
+        map.emplace(l.id,t.id);
+    }
     // return entt::null on success
     // o.w. id of lession it conflict with
     static Array::entity del(Array::entity l) {
