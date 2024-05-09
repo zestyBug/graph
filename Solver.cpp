@@ -62,12 +62,8 @@ void solve_function(float& progress)
                 // both gets conflict count
                 conflicts[require - lessions].count++;
                 conflicts[required- lessions].count++;
-                auto result1 = require->conflicts.emplace(required,Scores::conflict_requires);
-                auto result2 = required->conflicts.emplace(require,Scores::conflict_requiredby);
-                if(!result1.second)
-                    throw std::runtime_error("unordered_map failed");
-                if(!result2.second)
-                    throw std::runtime_error("unordered_map failed");
+                require->set_conflict(required,Scores::conflict_requires);
+                required->set_conflict(require,Scores::conflict_requiredby);
             }
         }
         // initialize groups & update conflicts
@@ -87,20 +83,7 @@ void solve_function(float& progress)
                     const EnchantLession *other_pointer = lession_id_proxy.at(Lession::registery.entity(other));
                     if(other_pointer != lession_pointer)
                     {
-                        auto res = lession_pointer->conflicts.find(other_pointer);
-                        if(res != lession_pointer->conflicts.end())
-                        {
-                            int score = res->second;
-                            int new_score = (origin.priority+1)*Scores::group_multiplier;
-                            if(new_score > score)
-                                lession_pointer->conflicts.at(other_pointer) = new_score;
-                        }
-                        else
-                        {
-                            auto result = lession_pointer->conflicts.emplace(other_pointer,(origin.priority+1)*Scores::group_multiplier);
-                            if(!result.second)
-                                throw std::runtime_error("unordered_map failed");
-                        }
+                        lession_pointer->set_conflict(other_pointer,(origin.priority+1)*Scores::group_multiplier);
                     }
                 }
             }
@@ -155,8 +138,11 @@ void solve_function(float& progress)
     // call each lession by most conflicts.
     TimeTable timetable{};
     progress=0.40;
-    for(auto &lession:conflicts) {
+    for(const ConflictBuffer &lession:conflicts) {
         printf("{'name': '%s', 'conflicts': %u}\n",lession.lession->name,lession.count);
+        // in teacher non-unavailable (non nullptr) times
+        // search for a place with least amount of conflict
+        // search proccess must be recursive
     }
 }catch(const std::exception& e){
     terminal.append(e.what());

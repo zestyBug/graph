@@ -33,6 +33,23 @@ struct EnchantLession {
     std::unordered_map<const EnchantLession*,int> conflicts;
     ProfessorBuffer *assigned_professor;
     EnchantLession() : assigned_professor{nullptr} {}
+    // set or update conflict value
+    void set_conflict(const EnchantLession* pointer,int score)
+    {
+        auto res = this->conflicts.find(pointer);
+        if(res != this->conflicts.end())
+        {
+            int old_score = res->second;
+            if(score > old_score)
+                this->conflicts.at(pointer) = score;
+        }
+        else
+        {
+            auto result = this->conflicts.emplace(pointer,score);
+            if(!result.second)
+                throw std::runtime_error("unordered_map failed");
+        }
+    }
 };
 struct ConflictBuffer {
     unsigned char count;
