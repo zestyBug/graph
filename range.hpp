@@ -1,7 +1,7 @@
 #ifndef __RANGE_HPP__
 #define __RANGE_HPP__ 1
 
-#include <stdio.h>
+#include <cstdio>
 
 template<const ssize_t FROM=0,const ssize_t TO=4,const ssize_t STEP=1>
 struct range final

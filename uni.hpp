@@ -2,7 +2,7 @@
 #define UNI_H
 
 #include <string>
-#include <string.h>
+#include <cstring>
 #include <vector>
 #include <map>
 #include "advanced_array/advanced_array.hpp"

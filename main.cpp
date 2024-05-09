@@ -39,12 +39,21 @@ int WinMain()
     Lession::registery.emplace(less6_id,less6_id,"ETC2");
 
     {
+        Lession &less1 = Lession::registery.get(less1_id);
         Lession &less2 = Lession::registery.get(less2_id);
         Lession &less3 = Lession::registery.get(less3_id);
         Lession &less4 = Lession::registery.get(less4_id);
+        Lession &less5 = Lession::registery.get(less5_id);
+        Lession &less6 = Lession::registery.get(less6_id);
         less2.require = less1_id;
         less3.require = less1_id;
         less4.require = less2_id;
+        less1.hours = 0;
+        less2.hours = 0;
+        less3.hours = 0;
+        less4.hours = 0;
+        less5.hours = 0;
+        less6.hours = 0;
     }
     grup1_id = Group::registery.create();
     {

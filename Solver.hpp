@@ -2,20 +2,32 @@
 #define __SOLVER_HPP
 
 #include <vector>
+#include <stack>
 #include <unordered_map>
 #include "span.hpp"
-#include <string.h>
+#include <cstring>
+#include <stdexcept>
 
-enum Scores : int {
-    idle_hour = 10,
-    unavailable_hour = -15,
-    reserved_hour = -50,
-    group_multiplier = -10,
+
+// remember:
+// closer to 0 = better
+// negative numbers = invalide
+typedef unsigned int Score;
+
+// conflict scores
+// higher = more perirority
+enum Scores : Score {
+    conflict_free_hour = 0,
+    conflict_group_multiplier = 2,
     conflict_requiredby = 10,
     conflict_requires = 10,
     conflict_group_low = 4,
     conflict_group_meduim = 7,
     conflict_group_high = 9,
+    conflict_out_of_depth = 100000,
+    conflict_unavailable_hour = 10000,
+    conflict_lession_swap = 1,
+    conflict_max = 9998,
 };
 
 constexpr int hour_offset = 2;
@@ -30,7 +42,7 @@ struct EnchantLession {
     // 1 ~ 8
     char semister;
     // maps the lession conflict with priority
-    std::unordered_map<const EnchantLession*,int> conflicts;
+    std::unordered_map<const EnchantLession*,Score> conflicts;
     ProfessorBuffer *assigned_professor;
     EnchantLession() : assigned_professor{nullptr} {}
     // set or update conflict value
@@ -58,10 +70,9 @@ struct ConflictBuffer {
 };
 struct ProfessorBuffer {
     const char * name;
-    EnchantLession *hours_score[5*5*2];
-    ProfessorBuffer() {
-        memset(hours_score,0,sizeof(hours_score));
-    }
+    EnchantLession *hours[5*5*2];
+    ProfessorBuffer():name{nullptr} {memset(hours,0,sizeof(hours));}
+    ProfessorBuffer(const ProfessorBuffer &) = default;
 };
 struct EnchantProfessorDynamic {
     int max_dynamic_hours = 0;
@@ -76,7 +87,40 @@ struct TimeTable {
     std::vector<EnchantLession*> hours[5*5*2];
     TimeTable() = default;
 };
+struct TimeTableBuffer {
+    Score hours[5*5*2];
+    TimeTableBuffer() {
+        memset(hours,0,sizeof(hours));
+    }
+};
 
 void solve_function(float& progress);
+
+
+constexpr unsigned int SERACH_DEPTH = 5;
+struct Choice {
+    const EnchantLession *lession;
+    int position;
+    Choice(const EnchantLession *l,int p):lession{l},position{p} {};
+};
+struct ScoreStack {
+    Score total;
+    std::stack<Choice> choice_stack;
+    ScoreStack():total{Scores::conflict_out_of_depth} {}
+    ScoreStack(const ScoreStack&) = default;
+    ScoreStack(ScoreStack &&) = default;
+    ScoreStack& operator = (const ScoreStack&) = default;
+    ScoreStack& operator = (ScoreStack&&) = default;
+    void swap_if_better(const ScoreStack& stack_object){
+        if(&stack_object != this){
+            if(this->total > stack_object.total){
+                this->total = stack_object.total;
+                this->choice_stack = stack_object.choice_stack;
+            }
+        }
+    }
+};
+
+
 
 #endif
