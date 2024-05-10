@@ -2,3 +2,6 @@
 /bin
 /obj
 /.vs*
+/graph/x64
+/timetable/x64/Debug
+/x64

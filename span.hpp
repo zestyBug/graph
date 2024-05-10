@@ -2,6 +2,8 @@
 #define SPAN_HPP_INCLUDED
 
 #include <stdint.h>
+#include <stdexcept>
+#include <vector>
 
 template<typename _Type>
 class span
@@ -22,7 +24,8 @@ public:
 	using reverse_iterator       = pointer;
 
 	constexpr span(const span&) noexcept = default;
-	constexpr span(_Type*data,size_t size):_M_ptr(data),_M_count(size){}
+	constexpr span(_Type*data,size_t size) noexcept :_M_ptr(data),_M_count(size){}
+	constexpr span(std::vector<_Type> &v) : _M_ptr(v.data()), _M_count(v.size()) {}
 	constexpr span& operator=(const span&) noexcept = default;
 	~span() noexcept = default;
 
@@ -57,17 +60,19 @@ public:
 
 	constexpr
 	reference back()
-	const noexcept
+	const
 	{
-		__glibcxx_assert(!empty());
+		if (empty())
+			throw std::runtime_error("atempt to read an empty span");
 		return *(this->_M_ptr + (size() - 1));
 	}
 
 	constexpr
 	reference operator[](const size_type __idx)
-	const noexcept
+	const
 	{
-		__glibcxx_assert(__idx < size());
+		if (empty())
+			throw std::out_of_range("atempt to read a span out of range");
 		return *(this->_M_ptr + __idx);
 	}
 

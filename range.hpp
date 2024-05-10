@@ -2,14 +2,15 @@
 #define __RANGE_HPP__ 1
 
 #include <cstdio>
+#include <cstdint>
 
-template<const ssize_t FROM=0,const ssize_t TO=4,const ssize_t STEP=1>
+template<const unsigned int FROM=0,const unsigned int TO=4,const unsigned int STEP=1>
 struct range final
 {
-    using value = ssize_t;
+    using value = unsigned int;
     struct Iterator final {
-        ssize_t VALUE;
-        Iterator(const ssize_t v):VALUE{v} {}
+        value VALUE;
+        Iterator(const value v):VALUE{v} {}
         Iterator(const Iterator& obj) = default;
         Iterator& operator = (const Iterator& obj) = default;
         constexpr bool operator != (const Iterator &obj) const {
@@ -18,13 +19,14 @@ struct range final
         void operator ++ () {
             VALUE+=STEP;
         }
-        void operator + (const ssize_t b) {
+        Iterator& operator += (const value b) {
             VALUE+=b;
+            return *this;
         }
-        constexpr ssize_t operator * () const {
+        constexpr value operator * () const {
             return this->VALUE;
         }
-        constexpr auto operator [] (const ssize_t i) const {
+        constexpr auto operator [] (const value i) const {
             constexpr auto result = i*STEP+FROM;
             static_assert(result < TO,"Invalid Index");
             return result;

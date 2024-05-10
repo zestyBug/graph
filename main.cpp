@@ -2,7 +2,7 @@
 #include "uni.hpp"
 #include <iostream>
 float _=0.0f;
-int WinMain()
+int main()
 {
     advanced_array::entity prof1_id,prof2_id,
         less1_id,less2_id,less3_id,less4_id,less5_id,less6_id,
@@ -48,9 +48,9 @@ int WinMain()
         less2.require = less1_id;
         less3.require = less1_id;
         less4.require = less2_id;
-        less1.hours = 0;
-        less2.hours = 0;
-        less3.hours = 0;
+        less1.hours = 1;
+        less2.hours = 1;
+        less3.hours = 1;
         less4.hours = 0;
         less5.hours = 0;
         less6.hours = 0;

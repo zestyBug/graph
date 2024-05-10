@@ -2,6 +2,7 @@
 #define __SOLVER_HPP
 
 #include <vector>
+#include <unordered_set>
 #include <stack>
 #include <unordered_map>
 #include "span.hpp"
@@ -44,7 +45,8 @@ struct EnchantLession {
     // maps the lession conflict with priority
     std::unordered_map<const EnchantLession*,Score> conflicts;
     ProfessorBuffer *assigned_professor;
-    EnchantLession() : assigned_professor{nullptr} {}
+    EnchantLession() noexcept  :name{ "" },hour{ 2 },semister { 1 },assigned_professor{ nullptr } {
+    }
     // set or update conflict value
     void set_conflict(const EnchantLession* pointer,int score)
     {
@@ -66,12 +68,14 @@ struct EnchantLession {
 struct ConflictBuffer {
     unsigned char count;
     const EnchantLession *lession;
-    ConflictBuffer():count{0},lession{nullptr} {}
+    ConflictBuffer() noexcept :count{0},lession{nullptr} {}
 };
 struct ProfessorBuffer {
     const char * name;
     EnchantLession *hours[5*5*2];
-    ProfessorBuffer():name{nullptr} {memset(hours,0,sizeof(hours));}
+    ProfessorBuffer() noexcept :name{nullptr} {
+        memset(this->hours,0,sizeof(this->hours));
+    }
     ProfessorBuffer(const ProfessorBuffer &) = default;
 };
 struct EnchantProfessorDynamic {
@@ -84,18 +88,17 @@ void rsort(span<ConflictBuffer>  array);
 
 
 struct TimeTable {
-    std::vector<EnchantLession*> hours[5*5*2];
+    std::unordered_set<const EnchantLession*> hours[5*5*2];
     TimeTable() = default;
 };
 struct TimeTableBuffer {
     Score hours[5*5*2];
-    TimeTableBuffer() {
-        memset(hours,0,sizeof(hours));
+    TimeTableBuffer() noexcept {
+        memset(this->hours,0,sizeof(this->hours));
     }
 };
 
 void solve_function(float& progress);
-
 
 constexpr unsigned int SERACH_DEPTH = 5;
 struct Choice {
@@ -106,7 +109,7 @@ struct Choice {
 struct ScoreStack {
     Score total;
     std::stack<Choice> choice_stack;
-    ScoreStack():total{Scores::conflict_out_of_depth} {}
+    ScoreStack() noexcept :total{Scores::conflict_out_of_depth} {}
     ScoreStack(const ScoreStack&) = default;
     ScoreStack(ScoreStack &&) = default;
     ScoreStack& operator = (const ScoreStack&) = default;
@@ -121,6 +124,28 @@ struct ScoreStack {
     }
 };
 
+ScoreStack recursive_conflicts1(
+    const TimeTable& timetable,
+    const EnchantLession& lession,
+    const ProfessorBuffer& professor,
+    const unsigned char level
+);
+ScoreStack recursive_conflicts2(
+    const TimeTable& timetable,
+    const EnchantLession& lession,
+    const ProfessorBuffer& professor,
+    const unsigned char level
+);
 
+typedef ScoreStack(*conflict_function_t)(
+    const TimeTable& timetable,
+    const EnchantLession& lession,
+    const ProfessorBuffer& professor,
+    const unsigned char level
+);
+
+void recursive_solve(const EnchantLession& lession, TimeTable& timetable);
+void apply_result(ScoreStack& res, TimeTable& timetable);
+void print_result(const TimeTable& timetable);
 
 #endif
