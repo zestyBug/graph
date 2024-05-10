@@ -1,7 +1,9 @@
 #include "Solver.hpp"
 #include "uni.hpp"
+#include "ui_components.hpp"
 #include <iostream>
 float _=0.0f;
+
 int main()
 {
     advanced_array::entity prof1_id,prof2_id,
@@ -71,5 +73,7 @@ int main()
     Pair::create(less6_id,prof2_id);
 
     solve_function(_);
+    printf("%s\n",terminal.c_str());
+
     return 0;
 }

@@ -174,9 +174,9 @@ void solve_function(float& progress)
 
 
 void apply_result(ScoreStack &res,TimeTable &timetable) {
-    while (!res.choice_stack.empty())
+    while (!res.choice_queue.empty())
     {
-        const Choice& value = res.choice_stack.top();
+        const Choice& value = res.choice_queue.front();
         const int index = value.position;
         const EnchantLession* new_value = value.lession;
         if (index < 0 || index > 49)
@@ -187,7 +187,7 @@ void apply_result(ScoreStack &res,TimeTable &timetable) {
         timetable.hours[index].erase(old_value);
         prof_hours[index] = (EnchantLession*)new_value;
         timetable.hours[index].emplace((EnchantLession*)new_value);
-        res.choice_stack.pop();
+        res.choice_queue.pop();
     }
 }
 
@@ -204,7 +204,7 @@ void recursive_solve(const EnchantLession& lession,TimeTable &timetable) {
         );
         if (res.total > Scores::conflict_max)
             throw std::runtime_error("no solution was found");
-        if(((const Choice&)res.choice_stack.top()).lession != &lession)
+        if(((const Choice&)res.choice_queue.front()).lession != &lession)
             throw std::runtime_error("unexpected solution");
         apply_result(res, timetable);
     } else if (lession.hour == 3) {
@@ -217,7 +217,7 @@ void recursive_solve(const EnchantLession& lession,TimeTable &timetable) {
             );
             if (res.total > Scores::conflict_max)
                 throw std::runtime_error("no solution was found");
-            if (((const Choice&)res.choice_stack.top()).lession != &lession)
+            if (((const Choice&)res.choice_queue.front()).lession != &lession)
                 throw std::runtime_error("unexpected solution");
             apply_result(res, timetable);
         }
@@ -237,7 +237,7 @@ void recursive_solve(const EnchantLession& lession,TimeTable &timetable) {
             );
             if (res.total > Scores::conflict_max)
                 throw std::runtime_error("no solution was found");
-            const Choice& last_choice = res.choice_stack.top();
+            const Choice& last_choice = res.choice_queue.front();
             if (last_choice.lession != &lession)
                 throw std::runtime_error("unexpected solution");
             professor_new.hours[last_choice.position] = nullptr;
@@ -314,12 +314,12 @@ ScoreStack recursive_conflicts1 (
             if(hour == nullptr)
             {
                 result_temp.total = Scores::conflict_unavailable_hour;
-                result_temp.choice_stack.emplace(&lession,i);
+                result_temp.choice_queue.emplace(&lession,i);
             }
             else if(hour == &freetime)
             {
                 result_temp.total = Scores::conflict_free_hour;
-                result_temp.choice_stack.emplace(&lession,i);
+                result_temp.choice_queue.emplace(&lession,i);
             }
             else
             {
@@ -337,7 +337,7 @@ ScoreStack recursive_conflicts1 (
                 }
                 if(result_temp.total > Scores::conflict_max)
                         continue;
-                result_temp.choice_stack.emplace(&lession,i);
+                result_temp.choice_queue.emplace(&lession,i);
                 result_temp.total += Scores::conflict_lession_swap;
             }
             result_temp.total += other_conflicts(timetable.hours[i],lession);
@@ -363,14 +363,14 @@ ScoreStack recursive_conflicts2(
             const EnchantLession* hour2 = professor.hours[i + 1];
             if (hour1 == nullptr && hour2 == nullptr) {
                 result_temp.total = Scores::conflict_unavailable_hour * 2;
-                result_temp.choice_stack.emplace(&lession, i);
-                result_temp.choice_stack.emplace(&lession, i + 1);
+                result_temp.choice_queue.emplace(&lession, i);
+                result_temp.choice_queue.emplace(&lession, i + 1);
             }
             else if (hour1 == &freetime && hour2 == &freetime)
             {
                 result_temp.total = Scores::conflict_free_hour * 2;
-                result_temp.choice_stack.emplace(&lession, i);
-                result_temp.choice_stack.emplace(&lession, i + 1);
+                result_temp.choice_queue.emplace(&lession, i);
+                result_temp.choice_queue.emplace(&lession, i + 1);
             }
             else
             {
@@ -386,45 +386,74 @@ ScoreStack recursive_conflicts2(
                     result_temp = recursive_conflicts2(timetable, *hour1, professor_temp, level - 1);
                     if (result_temp.total > Scores::conflict_max)
                         continue;
-                    result_temp.choice_stack.emplace(&lession, i);
-                    result_temp.choice_stack.emplace(&lession, i + 1);
                     result_temp.total += Scores::conflict_lession_swap * 2;
+                    result_temp.choice_queue.emplace(&lession, i);
+                    result_temp.choice_queue.emplace(&lession, i + 1);
                 }
                 else if (hour1 && hour1 != &freetime && hour2 && hour2 != &freetime)
                 {
+                    // hold updated hours according to our first conflict choices
                     ProfessorBuffer professor_temp(professor);
                     professor_temp.hours[i] = nullptr;
                     professor_temp.hours[i + 1] = nullptr;
                     result_temp = recursive_conflicts1(timetable, *hour1, professor_temp, level - 1);
                     if (result_temp.total > Scores::conflict_max)
                         continue;
-                    ScoreStack result_temp2 = recursive_conflicts1(timetable, *hour1, professor_temp, level - 1);
-                    if (result_temp2.total > Scores::conflict_max)
-                        continue;
-                    result_temp.choice_stack.emplace(&lession, i);
 
-                    while (!result_temp2.choice_stack.empty()) {
-                        result_temp.choice_stack.emplace(result_temp2.choice_stack.top());
-                        result_temp2.choice_stack.pop();
+                    {
+                         std::queue<Choice> temp = result_temp.choice_queue;
+                         while (temp.empty()) {
+                             const Choice& value = temp.front();
+                             professor_temp.hours[value.position] = (EnchantLession*)value.lession;
+                             temp.pop();
+                         }
                     }
 
-                    result_temp.choice_stack.emplace(&lession, i + 1);
+                    ScoreStack result_temp2 = recursive_conflicts1(timetable, *hour2, professor_temp, level - 1);
+                    if (result_temp2.total > Scores::conflict_max)
+                        continue;
+
+                    result_temp.choice_queue.emplace(&lession, i);
+
+                    while (!result_temp2.choice_queue.empty()) {
+                        result_temp.choice_queue.emplace(result_temp2.choice_queue.front());
+                        result_temp2.choice_queue.pop();
+                    }
+
+                    result_temp.choice_queue.emplace(&lession, i + 1);
                     result_temp.total += result_temp2.total;
                     result_temp.total += Scores::conflict_lession_swap * 2;
                 }
                 else
                 {
-                    if (hour2 != &freetime)
-                        hour1 = hour2;
                     ProfessorBuffer professor_temp(professor);
+
+                    if (hour1 == nullptr || hour2 == nullptr) {
+                        if (hour1 == nullptr)
+                            std::swap(hour1, hour2);
+                        if (hour1 == &freetime) {
+                            result_temp.total = Scores::conflict_unavailable_hour + Scores::conflict_free_hour;
+                            goto end;
+                        }
+                    }else{
+                        if (hour1 == &freetime)
+                            std::swap(hour1, hour2);
+                    }
+                    if (hour1 == nullptr || hour1 == &freetime)
+                        throw std::runtime_error("unhandlable hour!");
+                    if (hour2 != nullptr && hour2 != &freetime)
+                        throw std::runtime_error("unhandlable hour!");
+
                     professor_temp.hours[i] = nullptr;
                     professor_temp.hours[i + 1] = nullptr;
                     result_temp = recursive_conflicts1(timetable, *hour1, professor_temp, level - 1);
                     if (result_temp.total > Scores::conflict_max)
                         continue;
-                    result_temp.choice_stack.emplace(&lession, i);
-                    result_temp.choice_stack.emplace(&lession, i + 1);
-                    result_temp.total += Scores::conflict_lession_swap + Scores::conflict_free_hour;
+                    result_temp.total += Scores::conflict_lession_swap;
+                    result_temp.total += hour2 == nullptr ? Scores::conflict_unavailable_hour : Scores::conflict_free_hour;
+                end:
+                    result_temp.choice_queue.emplace(&lession, i);
+                    result_temp.choice_queue.emplace(&lession, i + 1);
                 }
             }
             result_temp.total += other_conflicts(timetable.hours[i], lession);

@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_set>
 #include <stack>
+#include <queue>
 #include <unordered_map>
 #include "span.hpp"
 #include <cstring>
@@ -108,7 +109,7 @@ struct Choice {
 };
 struct ScoreStack {
     Score total;
-    std::stack<Choice> choice_stack;
+    std::queue<Choice> choice_queue;
     ScoreStack() noexcept :total{Scores::conflict_out_of_depth} {}
     ScoreStack(const ScoreStack&) = default;
     ScoreStack(ScoreStack &&) = default;
@@ -118,7 +119,7 @@ struct ScoreStack {
         if(&stack_object != this){
             if(this->total > stack_object.total){
                 this->total = stack_object.total;
-                this->choice_stack = stack_object.choice_stack;
+                this->choice_queue = stack_object.choice_queue;
             }
         }
     }

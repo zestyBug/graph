@@ -1,0 +1,4 @@
+-use a custom value like freetime variable, and use it instead of nullptr in recursice_conflict, \
+and add custom high score for it, so we can use professor unavailable days with a small penalty, \
+but never use day already assigned to and we want to move.
+-AI to find best Professor dynamic time.
