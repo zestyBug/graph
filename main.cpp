@@ -8,7 +8,7 @@ int main()
 {
     advanced_array::entity prof1_id,prof2_id,
         less1_id,less2_id,less3_id,less4_id,less5_id,less6_id,
-        grup1_id;
+        grup1_id,grup2_id;
 
     prof1_id = Professor::registery.create();
     {
@@ -51,8 +51,8 @@ int main()
         less3.require = less1_id;
         less4.require = less2_id;
         less1.hours = 1;
-        less2.hours = 1;
-        less3.hours = 1;
+        less2.hours = 0;
+        less3.hours = 0;
         less4.hours = 0;
         less5.hours = 0;
         less6.hours = 0;
@@ -63,6 +63,13 @@ int main()
         group1.priority = 1;
         group1.members.emplace_back(less4_id);
         group1.members.emplace_back(less5_id);
+    }
+    grup2_id = Group::registery.create();
+    {
+        Group &group = Group::registery.emplace(grup2_id,grup2_id,"Grup2");
+        group.priority = 1;
+        group.members.emplace_back(less3_id);
+        group.members.emplace_back(less4_id);
     }
 
     Pair::create(less1_id,prof1_id);

@@ -125,13 +125,29 @@ struct ScoreStack {
     }
 };
 
+// returns least conflict Score of given lession for 1 hour
 ScoreStack recursive_conflicts1(
     const TimeTable& timetable,
     const EnchantLession& lession,
     const ProfessorBuffer& professor,
     const unsigned char level
 );
+// returns least conflict Score of given lession for 2 hour
 ScoreStack recursive_conflicts2(
+    const TimeTable& timetable,
+    const EnchantLession& lession,
+    const ProfessorBuffer& professor,
+    const unsigned char level
+);
+// returns least conflict Score of given lession for 3 hour
+ScoreStack recursive_conflicts3(
+    const TimeTable& timetable,
+    const EnchantLession& lession,
+    const ProfessorBuffer& professor,
+    const unsigned char level
+);
+// returns least conflict Score of given lession for 4 hour
+ScoreStack recursive_conflicts4(
     const TimeTable& timetable,
     const EnchantLession& lession,
     const ProfessorBuffer& professor,
