@@ -2,7 +2,6 @@
 #define CORE_HPP 1
 
 #include "Solver.hpp"
-#include <thread>
 
 // a Core class is like activity class in Android.
 // should have no static variable,
@@ -11,10 +10,8 @@ class Core
 {
 protected:
     bool show_window=true,show_demo=false, show_terminal=true;
-    std::thread sthread;
     TimeTable* timetable = nullptr;
     void *context=nullptr;
-    float progress=0.0f;
 public:
     Core();
     ~Core();

@@ -137,9 +137,11 @@ TimeTable::TimeTable() :
         ProfessorBuffer* prof = professor_id_proxy.at(Professor::registery.entity(pair.second));
         less->assigned_professor = prof;
     }
+
+    sthread = std::thread(&TimeTable::solve_function, this);
 }
 
-void TimeTable::solve_function(float& progress)
+void TimeTable::solve_function()
 {
     try {
         // rand seed context is thread specified.
@@ -154,6 +156,11 @@ void TimeTable::solve_function(float& progress)
             progress += steps;
         }
         this->update_conflicts();
+        progress = 0.55f;
+        for (const ConflictBuffer& lession : conflicts) {
+            this->recursive_update(*lession.lession);
+            progress += steps;
+        }
     } catch(const std::exception& e) {
         terminal.append("std::exception: ");
         terminal.append(e.what());
@@ -231,6 +238,10 @@ void TimeTable::recursive_solve(const EnchantLession& lession)
     this->apply_result(res);
 }
 
+void TimeTable::recursive_update(const EnchantLession& lession) {
+    //
+}
+
 
 void TimeTable::print_result() {
     const char * STR_TEMPLATE = "{%s days: %s, lession: %s, professor: %s}\n";
@@ -268,7 +279,7 @@ void TimeTable::rsort(span<ConflictBuffer> array) noexcept {
 }
 
 
-Score TimeTable::other_conflicts(int i,const EnchantLession &lession){
+Score TimeTable::other_conflicts(int i,const EnchantLession &lession, Score give_up_score){
     //
     int lession_count = 0;
     Score total = 0;
@@ -296,6 +307,10 @@ Score TimeTable::other_conflicts(int i,const EnchantLession &lession){
         //if (other_lession->semister < 1)
         else
             total += Scores::conflict_no_semister;
+
+        if (give_up_score > give_up_score) {
+            return give_up_score;
+        }
     }
     // 4 less than 3 lession per hour to avoid rush hours
     if(lession_count > PRESENTATION_LIMIT)
@@ -317,6 +332,9 @@ ScoreStack TimeTable::recursive_conflicts1 (
         for (const auto i : range<0, 50, 1>())
         {
             ScoreStack result_temp;
+            const Score other_conflicts_score = this->other_conflicts(i, lession, best_result.total);
+            if (other_conflicts_score > best_result.total)
+                continue;
             // selected hour
             const EnchantLession * hour = professor.hours[i];
             if(hour == nullptr)
@@ -348,7 +366,7 @@ ScoreStack TimeTable::recursive_conflicts1 (
                 result_temp.choice_queue.emplace(&lession,i);
                 result_temp.total += Scores::conflict_lession_swap;
             }
-            result_temp.total += this->other_conflicts(i,lession);
+            result_temp.total += other_conflicts_score;
             best_result.swap_if_better(result_temp);
         }
     }
@@ -367,6 +385,12 @@ ScoreStack TimeTable::recursive_conflicts2(
             ScoreStack result_temp;
             const EnchantLession* hour1 = professor.hours[i];
             const EnchantLession* hour2 = professor.hours[i + 1];
+            const Score other_conflicts_score = 
+                this->other_conflicts(i, lession, best_result.total) +
+                this->other_conflicts(i+1, lession, best_result.total);
+            if (other_conflicts_score > best_result.total)
+                continue;
+
             if (hour1 == nullptr && hour2 == nullptr) {
                 result_temp.total = Scores::conflict_unavailable_hour * 2;
                 result_temp.choice_queue.emplace(&lession, i);
@@ -462,8 +486,7 @@ ScoreStack TimeTable::recursive_conflicts2(
                     result_temp.choice_queue.emplace(&lession, i + 1);
                 }
             }
-            result_temp.total += this->other_conflicts(i, lession);
-            result_temp.total += this->other_conflicts(i, lession);
+            result_temp.total += other_conflicts_score;
             best_result.swap_if_better(result_temp);
         }
     }

@@ -101,11 +101,9 @@ int Core::OnDraw(double delta,bool dirty)
                 if (ImGui::MenuItem("About", NULL, false, true))
                     show_demo = true;
                 ImGui::MenuItem("Terminal", NULL, &show_terminal);
-                if(!sthread.joinable() && !timetable)
+                if(!timetable)
                     if(ImGui::MenuItem("Build", NULL, false, true)) {
-                        this->progress=0.0f;
                         timetable = new TimeTable();
-                        sthread = std::thread(&TimeTable::solve_function, timetable, std::ref(this->progress));
                     }
                 ImGui::EndMenu();
             }
@@ -119,13 +117,13 @@ int Core::OnDraw(double delta,bool dirty)
         ImGui::BeginChild("MyTabBar_layout", window_size);
         if (ImGui::BeginTabBar("MyTabBar", ImGuiTabBarFlags_None))
         {
-            if (sthread.joinable()) {
-                ImGui::ProgressBar(progress, ImVec2(0.0f, 0.0f));
+            if (this->timetable && this->timetable->sthread.joinable()) {
+                ImGui::ProgressBar(this->timetable->progress, ImVec2(0.0f, 0.0f));
                 ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
                 ImGui::Text("Progress");
-                if (progress >= 1.0f) {
+                if (this->timetable->progress >= 1.0f) {
                     if (ImGui::Button("OK"))
-                        sthread.join();
+                        this->timetable->sthread.join();
                 }
             }else if(this->timetable){
                 if (this->timetable->panel()) {

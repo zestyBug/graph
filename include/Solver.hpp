@@ -10,6 +10,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <stdlib.h>
+#include <thread>
 
 
 // remember:
@@ -190,11 +191,13 @@ class TimeTable
     std::vector<EnchantProfessorDynamic> professors_dynamic;
     std::unordered_set<Result, chash, cequal_to> hours[5 * 5 * 2];
 public:
+    std::thread sthread;
+    float progress = 0.0f;
     TimeTable();
     // this fucntion is so important, it converts ENTT array
     // to better structure. also countw number of conflicts.
     // then invoke the main proccess
-    void solve_function(float& progress);
+    void solve_function();
     // defined in uni.hpp
     // return true if we are done with it and should be deleted.
     bool panel();
@@ -204,8 +207,9 @@ protected:
     //bitween given lession and array of other lessions,
     //if there was any.
     //note: ignores lessions with same professor.
-    Score other_conflicts(int i, const EnchantLession& lession);
+    Score other_conflicts(int i, const EnchantLession& lession, Score give_up);
     void recursive_solve(const EnchantLession& lession);
+    void recursive_update(const EnchantLession& lession);
     void apply_result(ScoreStack& res);
     void print_result();
     void update_conflicts();
