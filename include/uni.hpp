@@ -4,11 +4,18 @@
 #include <string>
 #include <cstring>
 #include <vector>
+#include <array>
 #include <map>
 #include "advanced_array/advanced_array.hpp"
+#include "quickjs/quickjs.h"
+#include "Solver.hpp"
+
 
 namespace Array = advanced_array;
 
+#define MAIN_FUNCTION int main()
+//std::initializer_list could be better
+extern char const * const  lable_name[25];
 
 void Weekbox(bool * const check_list);
 
@@ -20,19 +27,26 @@ struct Base {
     std::string name;
 };
 
-struct Professor : public Base
+class Professor : public Base
 {
+protected:
     friend class Pair;
     friend class Lession;
+    friend class TimeTable;
+    friend void professor_tab();
+    friend JSValue js_uni_new_professor(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+    friend JSValue js_uni_new_lession(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
     static Array::registry<Professor> registery;
-    Professor(Array::entity _id,const char *_name):Base(_id,_name),max_uncertain_hours{0} {
-        memset(hours,0,sizeof(hours));
-        memset(uncertain_hours,0,sizeof(uncertain_hours));
-    }
+    // 0~24
+    // true: available
     bool hours[25];
     int max_uncertain_hours;
     bool uncertain_hours[25];
 public:
+    Professor(Array::entity _id,const char *_name):Base(_id,_name),max_uncertain_hours{0} {
+        memset(hours,0,sizeof(hours));
+        memset(uncertain_hours,0,sizeof(uncertain_hours));
+    }
     static Professor& create(const char *name)
     {
         Array::entity obj = registery.create();
@@ -50,22 +64,35 @@ public:
 };
 
 
-struct Lession : public Base
+class Lession : public Base
 {
+protected:
     friend class Pair;
     friend class Group;
     friend class Professor;
+    friend class TimeTable;
+    friend JSValue js_uni_new_group(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+    friend JSValue js_uni_new_lession(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
     static char const * const hours_lable[3];
     static Array::registry<Lession> registery;
-    Lession(Array::entity _id,const char *_name)
-        :Base(_id,_name),hours{1},semister{1},require{Array::null}
-    {}
-    // options: 0,1,2
+    // options: 
+    // 0 => 2 hours per 2 week
+    // 1 => 3 hours per 2 week
+    // 2 => 4 hours per 2 weeks
     int hours;
-    // options: 0 ~ 7
+    // set how it conflicts acoording to semister of other lessions
+    // normal: 1 ~ 8
+    // not specified: < 1
+    // all: > 8
+    // see 'other_conflicts' for more info.
     int semister;
+    // gives the lession periority to be placed in timetable.
+    int weight;
     Array::entity require;
 public:
+    Lession(Array::entity _id, const char* _name)
+        :Base(_id, _name), hours{ 1 }, semister{ -1 }, weight{ 0 }, require {Array::null}
+    {}
     static Lession& create(const char *name) {
         Array::entity obj = registery.create();
         return registery.emplace(obj, obj, name);
@@ -86,17 +113,20 @@ public:
 };
 
 
-struct Group : public Base
+class Group : public Base
 {
+protected:
+    friend class TimeTable;
+    friend JSValue js_uni_new_group(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
     static Array::registry<Group> registery;
     static char const * const priorities[3];
     std::vector<Array::entity> members;
     // options: 0,1,2
     int priority;
+public:
     Group(Array::entity _id, const char * _name):Base(_id,_name),members(),priority{1} {
         members.reserve(10);
     }
-public:
     static Group& create(const char *name) {
         Array::entity obj = registery.create();
         return registery.emplace(obj, obj, name);
@@ -125,8 +155,10 @@ public:
 };
 
 
-struct Pair {
+class Pair {
+protected:
     friend class Professor;
+    friend class TimeTable;
     static std::map<Array::entity,Array::entity> map;
 public:
     static void create(Array::entity l, Array::entity t) {
@@ -150,7 +182,7 @@ public:
     static Array::entity findProfessor(const Lession& lession){
         auto search = map.find(lession.id);
         if (search != map.end())
-            return search->first;
+            return search->second;
         return Array::null;
     }
     static Array::entity isInAny(const Professor& professor)
@@ -165,8 +197,8 @@ public:
     }
 };
 
-struct Setting {
-    static std::array<bool[25],8> forbiden;
+namespace Setting {
+    extern std::array<bool[25],8> forbiden;
 };
 
 void solve_function(float& progress);

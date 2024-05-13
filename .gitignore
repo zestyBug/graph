@@ -5,3 +5,8 @@
 /graph/x64
 /timetable/x64/Debug
 /x64
+src/quickjs-src/*
+/imgui.ini
+/libquickjs.*
+/quickjs.*
+/result.txt
