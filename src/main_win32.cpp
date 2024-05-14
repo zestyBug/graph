@@ -169,13 +169,17 @@ int width = window_initial_width, height = window_initial_height;
 uint32_t MouseButtonsDown = 0;
 bool MouseTracked = false;
 
-/*int WINAPI WinMain(
+#ifdef DEBUG
+HINSTANCE hInstance = 0;
+int main()
+#else
+int WINAPI WinMain(
     HINSTANCE hInstance,
     HINSTANCE hPrevInstance,
     LPSTR lpCmdLine,
-    const int iCmdShow) {
-    (void)hInstance; (void)hPrevInstance; (void)lpCmdLine;*/
-int main() { HINSTANCE hInstance = 0;
+    const int iCmdShow)
+#endif
+    {
     rc.OnInit();
 
     HGLRC		hGLRC;
@@ -302,10 +306,6 @@ int main() { HINSTANCE hInstance = 0;
         js_init_module_std(ctx, "std");
         js_init_module_os(ctx, "os");
         js_init_module_uni(ctx, "uni");
-#ifdef DEBUG
-        js_init_module_uv(ctx, "uv");
-        //js_init_module_sqlite(ctx, "sqlite");
-#endif
         JS_SetModuleLoaderFunc(rt, NULL, js_module_loader, NULL);
         js_std_add_helpers(ctx, 0, NULL);
 

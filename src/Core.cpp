@@ -125,12 +125,12 @@ int Core::OnDraw(double delta,bool dirty)
                     if (ImGui::Button("OK"))
                         this->timetable->sthread.join();
                 }
-            }else if(this->timetable){
+            } else if(this->timetable) {
                 if (this->timetable->panel()) {
                     delete this->timetable;
                     this->timetable = nullptr;
                 }
-            }else {
+            } else {
                 if (ImGui::BeginTabItem("Professor"))
                 {
                     professor_tab();

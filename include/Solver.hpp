@@ -32,11 +32,11 @@ enum Scores : Score {
     conflict_out_of_depth = 100000,
     conflict_no_solution = 1000000,
     conflict_unavailable_hour = 10000,
-    conflict_lession_swap = 1,
+    conflict_lession_swap = 0,
     conflict_max = 9998,
     conflict_same_semister = 20,
     conflict_all_semister = 10,
-    conflict_no_semister = 1,
+    conflict_no_semister = 0,
     conflict_banned_hour = 100,
     conflict_rush_hour = 30,
 };
@@ -47,6 +47,7 @@ struct ProfessorBuffer;
 struct EnchantLession {
     const char * name;
     // 2, 3 or 4
+    // 0: freetime
     char hour;
     // 1 ~ 8: normal
     char semister;
@@ -81,10 +82,12 @@ struct ConflictBuffer {
     unsigned char count;
     const EnchantLession *lession;
     ConflictBuffer() noexcept :count{0},lession{nullptr} {}
+    ConflictBuffer(const ConflictBuffer&) = default;
 };
 struct ProfessorBuffer {
     const char * name;
-    EnchantLession *hours[5*5*2];
+    // last one is freetime
+    EnchantLession *hours[5*5*2 + 1];
     ProfessorBuffer() noexcept :name{nullptr} {
         memset(this->hours,0,sizeof(this->hours));
     }
@@ -106,6 +109,7 @@ struct Choice {
     const EnchantLession *lession;
     int position;
     Choice(const EnchantLession *l,int p):lession{l},position{p} {};
+    Choice(const Choice&) = default;
 };
 struct ScoreStack {
     Score total;
@@ -155,6 +159,9 @@ struct ScoreStack {
 **  saving and loading
 **  more than single required lession
 **  professor hour periority
+* 
+* 
+**  Update Conflict Scores on apply_result, so update_conflicts will not be required
 */
 
 
@@ -187,18 +194,21 @@ class TimeTable
     std::vector <ConflictBuffer> conflicts;
     // stores current professors time decisions
     std::vector <ProfessorBuffer> professors_buffer;
+    std::vector <EnchantLession> freetime_buffer;
     // stores professors dynamic time information
     std::vector<EnchantProfessorDynamic> professors_dynamic;
     std::unordered_set<Result, chash, cequal_to> hours[5 * 5 * 2];
+    const float step;
 public:
     std::thread sthread;
     float progress = 0.0f;
-    TimeTable();
     // this fucntion is so important, it converts ENTT array
     // to better structure. also countw number of conflicts.
     // then invoke the main proccess
+    TimeTable();
+    // thread function
     void solve_function();
-    // defined in uni.hpp
+    // ImGui ui to render result defined in uni.hpp
     // return true if we are done with it and should be deleted.
     bool panel();
 protected:
@@ -206,13 +216,20 @@ protected:
     //calculte conflict score,
     //bitween given lession and array of other lessions,
     //if there was any.
-    //note: ignores lessions with same professor.
-    Score other_conflicts(int i, const EnchantLession& lession, Score give_up);
+    //note: ignores lessions with same professor, in cases where 
+    //recursive_conflictsX tries to swap 1 hour lession with 2 hour.
+    //note: finalize parametr must be true if lession is placed in the timetable 
+    // and we want to compute final conflict
+    Score other_conflicts(int i, const EnchantLession& lession, Score give_up = Scores::conflict_max, bool finalize = false);
     void recursive_solve(const EnchantLession& lession);
-    void recursive_update(const EnchantLession& lession);
     void apply_result(ScoreStack& res);
     void print_result();
+    // works like other_conflicts
+    // but Scores lessions with same professor on same hour
     void update_conflicts();
+    void verify_result();
+    // solve according to new  Scores
+    bool iterative_update(const EnchantLession&);
 
     static void rsort(span<ConflictBuffer>  array) noexcept;
 
