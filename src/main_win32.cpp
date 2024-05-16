@@ -2,10 +2,6 @@
 #include <thread>
 #include <mutex>
 #include <windows.h>
-#include "quickjs/cutils.h"
-#include "quickjs/quickjs-libc.h"
-#include "quickjs/quickjs.h"
-#include "js_uni.hpp"
 
 #include "Core.hpp"
 #include "glcorearb.h"
@@ -17,44 +13,6 @@
 #include "imgui/imgui_impl_opengl3.h"
 #include "imgui/imgui_impl_my.hpp"
 #include "Timer.hpp"
-
-float _=0.0f;
-
-static int eval_file(JSContext* ctx, const char* filename, int module)
-{
-    int ret = 0;
-    JSValue val;
-    uint8_t* buf;
-    size_t buf_len = 0;
-
-    buf = js_load_file(ctx, &buf_len, filename);
-    if (buf == NULL) {
-        ret = -1;
-        goto ret;
-    }
-    if (module < 0)
-        module = (has_suffix(filename, ".mjs") || JS_DetectModule((const char*)buf, buf_len));
-    if (module) {
-        /* for the modules, we compile then run to be able to set import.meta */
-        val = JS_Eval(ctx, (const char*)buf, buf_len, filename, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
-        if (!JS_IsException(val)) {
-            js_module_set_import_meta(ctx, val, TRUE, TRUE);
-            val = JS_EvalFunction(ctx, val);
-        }
-    }
-    else {
-        val = JS_Eval(ctx, (const char*)buf, buf_len, filename, JS_EVAL_TYPE_GLOBAL);
-    }
-    if (JS_IsException(val)) {
-        js_std_dump_error(ctx);
-        ret = -2;
-    }
-    JS_FreeValue(ctx, val);
-    js_free(ctx, buf);
-ret:
-    return ret;
-}
-
 
 typedef HGLRC(WINAPI* PFNWGLCREATECONTEXTATTRIBSARBPROC) (HDC hDC, HGLRC hShareContext, const int* attribList);
 typedef BOOL(WINAPI* PFNWGLCHOOSEPIXELFORMATARBPROC) (HDC hdc, const int* piAttribIList, const FLOAT* pfAttribFList, UINT nMaxFormats, int* piFormats, UINT* nNumFormats);
@@ -285,57 +243,6 @@ int WINAPI WinMain(
     ImGui_ImplOpenGL3_Init();
 
     ImGui::StyleColorsLight();
-
-
-
-    {
-        JSRuntime* rt;
-        JSContext* ctx;
-        int option_ind;
-        const char* include_list[32];
-        int i;
-
-        rt = JS_NewRuntime();
-        if (!rt) { printf("main.js: cannot allocate JS runtime\n"); exit(2); }
-        JS_SetMemoryLimit(rt, 1000000);/* limit the memory usage to 'n' bytes (optional) */
-        JS_SetMaxStackSize(rt, 500000);/* limit the stack size to 'n' bytes (optional) */
-
-        ctx = JS_NewContext(rt);
-        if (!ctx) { printf("main.js: cannot allocate JS context\n"); exit(2); }
-        /* system modules */
-
-
-        js_init_module_std(ctx, "std");
-        js_init_module_os(ctx, "os");
-        js_init_module_uni(ctx, "uni");
-        JS_SetModuleLoaderFunc(rt, NULL, js_module_loader, NULL);
-        js_std_add_helpers(ctx, 0, NULL);
-
-        if (eval_file(ctx, "main.js", -1)) {
-            printf("main.js was not found\n");
-            goto fail;
-        }
-
-        {
-            JSContext* ctx1;
-            int err;
-            unsigned char running = 2;
-            do {
-                do {
-                    err = JS_ExecutePendingJob(JS_GetRuntime(ctx), &ctx1);
-                    if (err < 0) {
-                        js_std_dump_error(ctx1);
-                        goto fail;
-                    }
-                    if (err != 0)
-                        running = 3;
-                } while (0 < err);
-            } while (--running);
-        }
-    fail:
-        JS_FreeContext(ctx);
-        JS_FreeRuntime(rt);
-    }
 
     DeltaTime.init();
 
