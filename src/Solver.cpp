@@ -23,6 +23,7 @@ TimeTable::TimeTable() :
     conflicts{ Lession::registery.pool_size() },
     professors_buffer{ Professor::registery.pool_size() },
     freetime_buffer{ Professor::registery.pool_size() },
+    professors_preference{ Professor::registery.pool_size() },
     professors_dynamic{ Professor::registery.pool_size() },
     step{ 0.49f / (float)(Lession::registery.pool_size()) }
 {
@@ -110,12 +111,15 @@ TimeTable::TimeTable() :
                 EnchantLession& freetime = freetime_buffer[index];
                 buffer.hours[i * 2] = &freetime;
                 buffer.hours[i * 2 + 1] = &freetime;
+                if (origin.hours[i] != 1)
+                    professors_preference[index].hours[i] = Scores::conflict_preferred_hour;
             }
             else {
                 buffer.hours[i * 2] = nullptr;
                 buffer.hours[i * 2 + 1] = nullptr;
             }
         }
+        buffer.preference = &professors_preference[index];
         for (size_t i = 0; i < 25; i++)
         {
             if (origin.uncertain_hours[i]) {
@@ -185,7 +189,7 @@ void TimeTable::solve_function()
     progress=1.0f;
 }
 
-void TimeTable::verify_result() {
+void TimeTable::verify_result()  const  {
     for (int i = 0; i < 50; i++) {
         auto& hour = this->hours[i];
         for (const auto& value : hour) {
@@ -328,7 +332,7 @@ exit:;
 }
 
 
-void TimeTable::print_result() {
+void TimeTable::print_result()  const {
     try {
     const char * STR_TEMPLATE = "{%s days: %s, lession: %s, professor: %s}\n";
     constexpr int str_len = 1023;
@@ -355,6 +359,9 @@ void TimeTable::print_result() {
             }
         }
     }
+    file.close();
+
+
     }
     catch (const std::exception& e) {
         terminal.append("Error: ");
@@ -371,7 +378,7 @@ void TimeTable::rsort(span<ConflictBuffer> array) noexcept {
 }
 
 
-Score TimeTable::other_conflicts(int i,const EnchantLession & this_value, Score give_up_score, bool finalize){
+Score TimeTable::other_conflicts(int i,const EnchantLession & this_value, Score give_up_score, bool finalize) const {
     //
     int lession_count = 0;
     Score total = 0;
@@ -422,6 +429,7 @@ Score TimeTable::other_conflicts(int i,const EnchantLession & this_value, Score 
     if(this_value.semister < 8 && this_value.semister > 0)
         if(Setting::forbiden[this_value.semister-1][i/2])
             total += Scores::conflict_banned_hour;
+    total += this_value.assigned_professor->preference->hours[i / 2];
     return total;
 }
 

@@ -504,6 +504,7 @@ namespace ImGui
     IMGUI_API bool          Checkbox(const char* label, bool* v);
     // check box but without rendering lable
     IMGUI_API bool          Checkbox2(const char* label, bool* v);
+    IMGUI_API bool          Checkbox3(const char* label, char* const v);
     IMGUI_API bool          CheckboxFlags(const char* label, int* flags, int flags_value);
     IMGUI_API bool          CheckboxFlags(const char* label, unsigned int* flags, unsigned int flags_value);
     IMGUI_API bool          RadioButton(const char* label, bool active);                    // use with e.g. if (RadioButton("one", my_value==1)) { my_value = 1; }

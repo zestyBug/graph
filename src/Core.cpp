@@ -96,13 +96,13 @@ int Core::OnDraw(double delta,bool dirty)
 	{
         if (ImGui::BeginMenuBar())
         {
-            if (ImGui::BeginMenu("File"))
+            if (ImGui::BeginMenu("File##Menu"))
             {
-                if (ImGui::MenuItem("About", NULL, false, true))
+                if (ImGui::MenuItem("About##Menu", NULL, false, true))
                     show_demo = true;
-                ImGui::MenuItem("Terminal", NULL, &show_terminal);
+                ImGui::MenuItem("Terminal##Menu", NULL, &show_terminal);
                 if(!timetable)
-                    if(ImGui::MenuItem("Build", NULL, false, true)) {
+                    if(ImGui::MenuItem("Build##Menu", NULL, false, true)) {
                         timetable = new TimeTable();
                     }
                 ImGui::EndMenu();
@@ -166,19 +166,19 @@ int Core::OnDraw(double delta,bool dirty)
 
     if (show_demo)
     {
-        const bool res = ImGui::BeginPopup("About##Popup", ImGuiWindowFlags_AlwaysAutoResize);
+        const bool res = ImGui::BeginPopup("About##Popup", ImGuiWindowFlags_Popup);
         if (res)
         {
             ImGui::Text("Simple timetable application (stable v0.1)");
             ImGui::Separator();
             ImGui::Text("By Zia Sahebi.");
             ImGui::Text("Libraries used: ImGui %s, QuickJS 2024-02-14, ENTT 3.13.2.", ImGui::GetVersion());
+            ImGui::EndPopup();
         }
         else
         {
-            show_demo = false;
+            //show_demo = false;
         }
-        ImGui::EndPopup();
     }
 
 	ImGui::End();

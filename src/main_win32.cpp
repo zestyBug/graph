@@ -1,5 +1,6 @@
 #include <iostream>
 #include <thread>
+#include <mutex>
 #include <windows.h>
 #include "quickjs/cutils.h"
 #include "quickjs/quickjs-libc.h"
@@ -159,6 +160,7 @@ HWND		hWnd;
 HDC			hDC;
 bool		isRunning = 1;
 bool		Rendered = 1;
+std::mutex render_mutex;
 // in ms
 double		SleepLenght = 1000.0 / 30.0;
 // previous time screen was rendered
@@ -531,7 +533,7 @@ LRESULT CALLBACK WndProc
         //if drawing context is initialized
         const double delta = DeltaTime.now() - prevouis_time;
         if (delta*1000.0 > SleepLenght)
-            if (ImGui::GetCurrentContext())
+            if (ImGui::GetCurrentContext() && render_mutex.try_lock())
             {
                 auto& io = ImGui::GetCurrentContext()->IO;
                 io.DeltaTime = delta;
@@ -545,6 +547,7 @@ LRESULT CALLBACK WndProc
                 ImGui::Render();
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
                 SwapBuffers(hDC);
+                render_mutex.unlock();
             }
     }
         break;

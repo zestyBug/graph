@@ -39,10 +39,18 @@ enum Scores : Score {
     conflict_no_semister = 0,
     conflict_banned_hour = 100,
     conflict_rush_hour = 30,
+    conflict_preferred_hour = -10,
 };
 
 struct EnchantLession;
 struct ProfessorBuffer;
+
+struct TimeTableBuffer {
+    Score hours[5 * 5];
+    TimeTableBuffer() noexcept {
+        memset(this->hours, 0, sizeof(this->hours));
+    }
+};
 
 struct EnchantLession {
     const char * name;
@@ -88,6 +96,7 @@ struct ProfessorBuffer {
     const char * name;
     // last one is freetime
     EnchantLession *hours[5*5*2 + 1];
+    TimeTableBuffer* preference;
     ProfessorBuffer() noexcept :name{nullptr} {
         memset(this->hours,0,sizeof(this->hours));
     }
@@ -99,12 +108,6 @@ struct EnchantProfessorDynamic {
     EnchantProfessorDynamic() = default;
 };
 
-struct TimeTableBuffer {
-    Score hours[5*5*2];
-    TimeTableBuffer() noexcept {
-        memset(this->hours,0,sizeof(this->hours));
-    }
-};
 struct Choice {
     const EnchantLession *lession;
     int position;
@@ -195,6 +198,7 @@ class TimeTable
     // stores current professors time decisions
     std::vector <ProfessorBuffer> professors_buffer;
     std::vector <EnchantLession> freetime_buffer;
+    std::vector <TimeTableBuffer> professors_preference;
     // stores professors dynamic time information
     std::vector<EnchantProfessorDynamic> professors_dynamic;
     std::unordered_set<Result, chash, cequal_to> hours[5 * 5 * 2];
@@ -218,16 +222,17 @@ protected:
     //if there was any.
     //note: ignores lessions with same professor, in cases where 
     //recursive_conflictsX tries to swap 1 hour lession with 2 hour.
-    //note: finalize parametr must be true if lession is placed in the timetable 
+    // @param finalize parametr must be true if lession is already placed in the timetable 
     // and we want to compute final conflict
-    Score other_conflicts(int i, const EnchantLession& lession, Score give_up = Scores::conflict_max, bool finalize = false);
+    // @param i: 0~49
+    Score other_conflicts(int i, const EnchantLession& lession, Score give_up = Scores::conflict_max, bool finalize = false) const ;
     void recursive_solve(const EnchantLession& lession);
     void apply_result(ScoreStack& res);
-    void print_result();
+    void print_result() const;
     // works like other_conflicts
     // but Scores lessions with same professor on same hour
     void update_conflicts();
-    void verify_result();
+    void verify_result() const;
     // solve according to new  Scores
     bool iterative_update(const EnchantLession&);
 

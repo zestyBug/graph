@@ -33,6 +33,25 @@ void Weekbox(bool * const check_list)
     }
 }
 
+static void Professor_Weekbox(char* const check_list)
+{
+    for (int i = 0; i < 25; i++)
+    {
+        char const* const lable = lable_name[i];
+        ImGui::Checkbox3(lable, &check_list[i]);
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::BeginTooltip();
+            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+            ImGui::TextUnformatted(lable);
+            ImGui::PopTextWrapPos();
+            ImGui::EndTooltip();
+        }
+        if ((i % 5) != 4)
+            ImGui::SameLine();
+    }
+}
+
 static void info(const char *TEXT) {
     ImGui::TextDisabled("(i)");
     if (ImGui::IsItemHovered())
@@ -58,13 +77,13 @@ void Professor::print()
     ImGui::Text("#%lu",this->id);
     ImGui::InputText("##name",this->name.data(),this->name.capacity()-1);
     ImGui::Text("Schedule");
-    Weekbox(this->hours);
+    Professor_Weekbox(this->hours);
     ImGui::BeginDisabled();
     ImGui::Text("Uncertainty");
     ImGui::InputInt("max uncertain days", &this->max_uncertain_hours, 1, 1);
     this->max_uncertain_hours = max(0,this->max_uncertain_hours);
     this->max_uncertain_hours = min(5,this->max_uncertain_hours);
-    Weekbox(this->uncertain_hours);
+    Professor_Weekbox(this->uncertain_hours);
     ImGui::EndDisabled();
     ImGui::Text("Assigned Lessons");
     ImGui::SameLine();
@@ -433,10 +452,10 @@ bool TimeTable::panel() {
     ImGui::EndChild();
     ImGui::Text("total score: %d", total);
     ImGui::SameLine();
-    if (ImGui::Button("Save"))
+    if (ImGui::Button("Save##Result"))
         this->print_result();
     ImGui::SameLine();
-    if (ImGui::Button("OK"))
+    if (ImGui::Button("OK##Result"))
         return true;
     return false;
 }

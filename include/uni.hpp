@@ -38,10 +38,12 @@ protected:
     friend JSValue js_uni_new_lession(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
     static Array::registry<Professor> registery;
     // 0~24
-    // true: available
-    bool hours[25];
+    // 0: unavailable
+    // 1: available
+    // ow: available with higher priority
+    char hours[25];
     int max_uncertain_hours;
-    bool uncertain_hours[25];
+    char uncertain_hours[25];
 public:
     Professor(Array::entity _id,const char *_name):Base(_id,_name),max_uncertain_hours{0} {
         memset(hours,0,sizeof(hours));
@@ -200,8 +202,5 @@ public:
 namespace Setting {
     extern std::array<bool[25],8> forbiden;
 };
-
-void solve_function(float& progress);
-
 
 #endif // UNI_H
