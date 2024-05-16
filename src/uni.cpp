@@ -81,8 +81,8 @@ void Professor::print()
     ImGui::BeginDisabled();
     ImGui::Text("Uncertainty");
     ImGui::InputInt("max uncertain days", &this->max_uncertain_hours, 1, 1);
-    this->max_uncertain_hours = max(0,this->max_uncertain_hours);
-    this->max_uncertain_hours = min(5,this->max_uncertain_hours);
+    this->max_uncertain_hours = std::max(0,this->max_uncertain_hours);
+    this->max_uncertain_hours = std::min(5,this->max_uncertain_hours);
     Professor_Weekbox(this->uncertain_hours);
     ImGui::EndDisabled();
     ImGui::Text("Assigned Lessons");
@@ -180,14 +180,14 @@ void Lession::print(){
     ImGui::InputInt("semister", &this->semister, 1, 1);
     ImGui::SameLine();
     info("1~8: Normal\n0: No conflict with Any\n9: Conflict with all lessions on same hour");
-    this->semister = max(0,this->semister);
-    this->semister = min(9,this->semister);
+    this->semister = std::max(0,this->semister);
+    this->semister = std::min(9,this->semister);
 
     ImGui::InputInt("weight", &this->weight, 1, 2);
     ImGui::SameLine();
     info("0~10: Add more periority to place this item first\nNo effect on conflict with other lessions");
-    this->weight = max(0, this->weight);
-    this->weight = min(10, this->weight);
+    this->weight = std::max(0, this->weight);
+    this->weight = std::min(10, this->weight);
 
     ImGui::Text("Requires");
     ImGui::SameLine();

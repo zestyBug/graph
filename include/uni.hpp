@@ -7,20 +7,24 @@
 #include <array>
 #include <map>
 #include "advanced_array/advanced_array.hpp"
-#include "quickjs/quickjs.h"
 #include "Solver.hpp"
-
+#define NOMINMAX 1
+#include <windows.h>
 
 namespace Array = advanced_array;
 
-#define MAIN_FUNCTION int main()
+
+#define LOAD_FUNCTION void load_ini(const char*);
+#define SAVE_FUNCTION void save_ini(const char*);
+
+
 //std::initializer_list could be better
 extern char const * const  lable_name[25];
 
 void Weekbox(bool * const check_list);
 
 struct Base {
-    Base(Array::entity _id,const char *_name):id(_id),name(_name) {
+    Base(Array::entity _id,const std::string& _name):id(_id),name(_name) {
         name.reserve(64);
     }
     Array::entity id;
@@ -34,8 +38,8 @@ protected:
     friend class Lession;
     friend class TimeTable;
     friend void professor_tab();
-    friend JSValue js_uni_new_professor(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
-    friend JSValue js_uni_new_lession(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+    friend SAVE_FUNCTION;
+    friend LOAD_FUNCTION;
     static Array::registry<Professor> registery;
     // 0~24
     // 0: unavailable
@@ -45,14 +49,14 @@ protected:
     int max_uncertain_hours;
     char uncertain_hours[25];
 public:
-    Professor(Array::entity _id,const char *_name):Base(_id,_name),max_uncertain_hours{0} {
+    Professor(Array::entity _id, const std::string& _name):Base(_id,_name),max_uncertain_hours{0} {
         memset(hours,0,sizeof(hours));
         memset(uncertain_hours,0,sizeof(uncertain_hours));
     }
-    static Professor& create(const char *name)
+    static Professor& create(const std::string& _name)
     {
         Array::entity obj = registery.create();
-        return registery.emplace(obj, obj, name);
+        return registery.emplace(obj, obj, _name);
     }
     static Array::entity del(Professor& obj);
     // return entt::null on success
@@ -73,8 +77,8 @@ protected:
     friend class Group;
     friend class Professor;
     friend class TimeTable;
-    friend JSValue js_uni_new_group(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
-    friend JSValue js_uni_new_lession(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+    friend SAVE_FUNCTION;
+    friend LOAD_FUNCTION;
     static char const * const hours_lable[3];
     static Array::registry<Lession> registery;
     // options: 
@@ -92,12 +96,12 @@ protected:
     int weight;
     Array::entity require;
 public:
-    Lession(Array::entity _id, const char* _name)
+    Lession(Array::entity _id, const std::string& _name)
         :Base(_id, _name), hours{ 1 }, semister{ -1 }, weight{ 0 }, require {Array::null}
     {}
-    static Lession& create(const char *name) {
+    static Lession& create(const std::string& _name) {
         Array::entity obj = registery.create();
-        return registery.emplace(obj, obj, name);
+        return registery.emplace(obj, obj, _name);
     }
     // return entt::null on success
     // o.w. id of lession it conflict with
@@ -119,19 +123,20 @@ class Group : public Base
 {
 protected:
     friend class TimeTable;
-    friend JSValue js_uni_new_group(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+    friend SAVE_FUNCTION;
+    friend LOAD_FUNCTION;
     static Array::registry<Group> registery;
     static char const * const priorities[3];
     std::vector<Array::entity> members;
     // options: 0,1,2
     int priority;
 public:
-    Group(Array::entity _id, const char * _name):Base(_id,_name),members(),priority{1} {
+    Group(Array::entity _id, const std::string& _name):Base(_id,_name),members(),priority{1} {
         members.reserve(10);
     }
-    static Group& create(const char *name) {
+    static Group& create(const std::string& _name) {
         Array::entity obj = registery.create();
-        return registery.emplace(obj, obj, name);
+        return registery.emplace(obj, obj, _name);
     }
     // return entt::null on success
     // o.w. id of lession it conflict with
@@ -161,6 +166,8 @@ class Pair {
 protected:
     friend class Professor;
     friend class TimeTable;
+    friend SAVE_FUNCTION;
+    friend LOAD_FUNCTION;
     static std::map<Array::entity,Array::entity> map;
 public:
     static void create(Array::entity l, Array::entity t) {

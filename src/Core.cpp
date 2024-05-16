@@ -15,6 +15,8 @@
 #include <Window.h>
 #include <thread>
 
+#include "uni_ini.hpp"
+
 #if defined(_WIN32)
 #  ifndef NOMINMAX
 #    define NOMINMAX
@@ -100,6 +102,10 @@ int Core::OnDraw(double delta,bool dirty)
             {
                 if (ImGui::MenuItem("About##Menu", NULL, false, true))
                     show_demo = true;
+                if (ImGui::MenuItem("Save##Menu", NULL, false, true))
+                    save_ini("result.txt");
+                if (ImGui::MenuItem("Load##Menu", NULL, false, true))
+                    load_ini("result.txt");
                 ImGui::MenuItem("Terminal##Menu", NULL, &show_terminal);
                 if(!timetable)
                     if(ImGui::MenuItem("Build##Menu", NULL, false, true)) {
