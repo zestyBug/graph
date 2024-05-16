@@ -459,11 +459,9 @@ ScoreStack TimeTable::recursive_conflicts1 (
                 continue;
             // selected hour
             const EnchantLession * hour = professor.hours[i];
-            if(hour == nullptr)
-            {
-                result_temp.total = Scores::conflict_unavailable_hour;
-                result_temp.choice_queue.emplace(&lession,i);
-            }
+            if (hour == nullptr)
+                continue;
+            // free hour
             else if(hour->hour < 1)
             {
                 result_temp.total = Scores::conflict_free_hour;
@@ -479,7 +477,8 @@ ScoreStack TimeTable::recursive_conflicts1 (
                 // note: there is no such situation where 'i' is an odd (eg: 1)
                 // and previous hour have same lession but we only move 2nd lession
                 // because it starts from 0 (an even nomber)
-                if(!(i & 1) && professor.hours[i] == professor.hours[i+1]){
+                if(!(i & 1) && professor.hours[i] == professor.hours[i+1])
+                {
                     professor_temp.hours[i] = nullptr;
                     professor_temp.hours[i+1] = professor.hours[50];
                     result_temp = this->recursive_conflicts2(*hour, professor_temp, level - 1);
@@ -492,14 +491,15 @@ ScoreStack TimeTable::recursive_conflicts1 (
                         result_temp.choice_queue.emplace(temp.front());
                         temp.pop();
                     }
+                    result_temp.total += Scores::conflict_lession_swap * 2;
                 }else{
                     professor_temp.hours[i] = nullptr;
                     result_temp = this->recursive_conflicts1(*hour, professor_temp, level - 1);
+                    result_temp.total += Scores::conflict_lession_swap;
                 }
-                //if(result_temp.total > Scores::conflict_max)
-                //        continue;
+                if(result_temp.total > Scores::conflict_max)
+                    continue;
                 result_temp.choice_queue.emplace(&lession,i);
-                result_temp.total += Scores::conflict_lession_swap;
             }
             result_temp.total += other_conflicts_score;
             best_result.swap_if_better(result_temp);
@@ -526,12 +526,10 @@ ScoreStack TimeTable::recursive_conflicts2(
             if (other_conflicts_score > best_result.total)
                 continue;
 
-            if (hour1 == nullptr && hour2 == nullptr) {
-                result_temp.total = Scores::conflict_unavailable_hour * 2;
-                result_temp.choice_queue.emplace(&lession, i);
-                result_temp.choice_queue.emplace(&lession, i + 1);
-            }
-            else if (hour1 && hour1->hour < 1 && hour2 && hour2->hour < 1)
+            if (hour1 == nullptr || hour2 == nullptr)
+                continue;
+            //both free hour
+            else if (hour1->hour < 1 && hour2->hour < 1)
             {
                 result_temp.total = Scores::conflict_free_hour * 2;
                 result_temp.choice_queue.emplace(&lession, i);
@@ -539,22 +537,24 @@ ScoreStack TimeTable::recursive_conflicts2(
             }
             else
             {
-                if (hour1 && hour1->hour > 0 && hour1->assigned_professor != lession.assigned_professor)
+                if (hour1->hour > 0 && hour1->assigned_professor != lession.assigned_professor)
                     throw std::runtime_error("something went wrong (1)");
-                if (hour2 && hour2->hour > 0 && hour2->assigned_professor != lession.assigned_professor)
+                if (hour2->hour > 0 && hour2->assigned_professor != lession.assigned_professor)
                     throw std::runtime_error("something went wrong (2)");
+                // 1 single 2 hour lession
                 if (hour1 == hour2)
                 {
                     ProfessorBuffer professor_temp(professor);
                     professor_temp.hours[i] = nullptr;
                     professor_temp.hours[i + 1] = nullptr;
                     result_temp = this->recursive_conflicts2(*hour1, professor_temp, level - 1);
-                    //if (result_temp.total > Scores::conflict_max)
-                    //    continue;
+                    if (result_temp.total > Scores::conflict_max)
+                        continue;
                     result_temp.total += Scores::conflict_lession_swap * 2;
                     result_temp.choice_queue.emplace(&lession, i);
                     result_temp.choice_queue.emplace(&lession, i + 1);
                 }
+                // 2 diffrent lessions
                 else if (hour1 && hour1->hour > 0 && hour2 && hour2->hour > 0)
                 {
                     // hold updated hours according to our first conflict choices
@@ -562,8 +562,8 @@ ScoreStack TimeTable::recursive_conflicts2(
                     professor_temp.hours[i] = nullptr;
                     professor_temp.hours[i + 1] = nullptr;
                     result_temp = this->recursive_conflicts1(*hour1, professor_temp, level - 1);
-                    //if (result_temp.total > Scores::conflict_max)
-                    //    continue;
+                    if (result_temp.total > Scores::conflict_max)
+                        continue;
 
                     {
                          std::queue<Choice> temp = result_temp.choice_queue;
@@ -575,8 +575,8 @@ ScoreStack TimeTable::recursive_conflicts2(
                     }
 
                     ScoreStack result_temp2 = this->recursive_conflicts1(*hour2, professor_temp, level - 1);
-                    //if (result_temp2.total > Scores::conflict_max)
-                    //    continue;
+                    if (result_temp2.total > Scores::conflict_max)
+                        continue;
 
                     result_temp.choice_queue.emplace(&lession, i);
 
@@ -589,34 +589,21 @@ ScoreStack TimeTable::recursive_conflicts2(
                     result_temp.total += result_temp2.total;
                     result_temp.total += Scores::conflict_lession_swap * 2;
                 }
+                // 1 lession & 1 free hour
                 else
                 {
                     ProfessorBuffer professor_temp(professor);
-
-                    if (hour1 == nullptr || hour2 == nullptr) {
-                        if (hour1 == nullptr)
-                            std::swap(hour1, hour2);
-                        if (hour1->hour < 1) {
-                            result_temp.total = Scores::conflict_unavailable_hour + Scores::conflict_free_hour;
-                            goto end;
-                        }
-                    }else{
-                        if (hour1->hour < 1)
-                            std::swap(hour1, hour2);
-                    }
-                    if (hour1 == nullptr || hour1->hour < 1)
-                        throw std::runtime_error("unhandlable hour!");
-                    if (hour2 != nullptr && hour2->hour > 0)
-                        throw std::runtime_error("unhandlable hour!");
-
                     professor_temp.hours[i] = nullptr;
                     professor_temp.hours[i + 1] = nullptr;
+
+                    if (hour1->hour < 1)
+                            std::swap(hour1, hour2);
+
                     result_temp = this->recursive_conflicts1(*hour1, professor_temp, level - 1);
-                    //if (result_temp.total > Scores::conflict_max)
-                    //    continue;
+                    if (result_temp.total > Scores::conflict_max)
+                        continue;
                     result_temp.total += Scores::conflict_lession_swap;
                     result_temp.total += hour2 == nullptr ? Scores::conflict_unavailable_hour : Scores::conflict_free_hour;
-                end:
                     result_temp.choice_queue.emplace(&lession, i);
                     result_temp.choice_queue.emplace(&lession, i + 1);
                 }
