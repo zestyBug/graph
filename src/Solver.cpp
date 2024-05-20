@@ -160,7 +160,7 @@ void TimeTable::solve_function()
 {
     try {
         // rand seed context is thread specified.
-        auto ctime = 1715684329;//time(NULL);
+        auto ctime = 2323;//time(NULL);
         srand(ctime);
         printf("srand(%d);\n", ctime);
         // sort by most conflicts.
@@ -430,6 +430,8 @@ Score TimeTable::other_conflicts(int i,const EnchantLession & this_value, Score 
         if(Setting::forbiden[this_value.semister-1][i/2])
             total += Scores::conflict_banned_hour;
     total += this_value.assigned_professor->preference->hours[i / 2];
+    //simple hard coded way to penalty late hours
+    total += ((i % 10) >> 2);
     return total;
 }
 

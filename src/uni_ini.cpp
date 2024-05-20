@@ -91,7 +91,7 @@ void load_ini(const char * filename) {
                 advanced_array::entity p2;
                 if (entity_type == 2) {
                     Lession& lession = lession_list.back();
-                    if (sscanf(line_view.data(), "hours=%i", &p1[0]) == 1) {
+                    if (sscanf(line_view.data(), "hour=%i", &p1[0]) == 1) {
                         lession.hours = p1[0];
                     }
                     else if (sscanf(line_view.data(), "weight=%i", &p1[0]) == 1) {
